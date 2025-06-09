@@ -1,9 +1,13 @@
-import { IsNotEmpty, IsUrl, IsString, IsOptional, IsBoolean, IsInt, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsUrl, IsString, IsOptional, IsBoolean, IsInt, Min, Max, isNotEmpty, isString } from 'class-validator';
 
 export class CreateRssSourceDto {
   @IsNotEmpty()
   @IsString()
   name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  username: string;
 
   @IsNotEmpty()
   @IsUrl()

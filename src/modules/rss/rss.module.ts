@@ -18,6 +18,6 @@ import { TranslationModule } from '../translation/translation.module';
   ],
   controllers: [RssController],
   providers: [RssService, RssSchedulerService, ArticlePurifierService],
-  exports: [RssService, RssSchedulerService],
+  exports: [RssService, RssSchedulerService ],
 })
 export class RssModule {}

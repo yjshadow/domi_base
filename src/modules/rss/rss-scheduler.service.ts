@@ -5,6 +5,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RssSource } from './entities/rss-source.entity';
 
+/**
+ * RSS调度服务
+ * 负责定时获取和更新RSS源的内容
+ */
 @Injectable()
 export class RssSchedulerService {
   private readonly logger = new Logger(RssSchedulerService.name);
@@ -16,6 +20,11 @@ export class RssSchedulerService {
     private readonly rssSourceRepository: Repository<RssSource>,
   ) {}
 
+  /**
+   * 每分钟执行一次的定时任务
+   * 检查并更新所有活跃的RSS源
+   * 使用锁机制(isUpdating)防止并发更新
+   */
   @Cron(CronExpression.EVERY_MINUTE)
   async handleRssUpdates() {
     if (this.isUpdating) {
@@ -33,6 +42,13 @@ export class RssSchedulerService {
     }
   }
 
+  /**
+   * 更新所有活跃的RSS源
+   * - 获取所有活跃的RSS源
+   * - 根据更新间隔检查是否需要更新
+   * - 处理更新过程中的错误
+   * - 如果源持续发生错误，会自动停用
+   */
   private async updateSources() {
     const sources = await this.rssSourceRepository.find({
       where: { active: true },
@@ -82,7 +98,11 @@ export class RssSchedulerService {
     }
   }
 
-  // 手动触发更新
+  /**
+   * 手动触发RSS更新
+   * 允许在定时任务之外手动触发更新过程
+   * 如果当前已有更新在进行中，则不会重复触发
+   */
   async triggerUpdate() {
     if (!this.isUpdating) {
       await this.handleRssUpdates();

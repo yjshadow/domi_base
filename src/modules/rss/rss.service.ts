@@ -13,6 +13,10 @@ import * as Parser from 'rss-parser';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+/**
+ * RSS服务
+ * 负责RSS源的管理、文章的获取和处理、以及定时更新任务
+ */
 @Injectable()
 export class RssService {
   private readonly logger = new Logger(RssService.name);
@@ -50,7 +54,12 @@ export class RssService {
     });
   }
 
-  // RSS源管理
+  /**
+   * RSS源管理
+   * 创建新的RSS订阅源
+   * @param createRssSourceDto RSS源创建参数
+   * @returns 创建的RSS源实体
+   */
   async createSource(createRssSourceDto: CreateRssSourceDto): Promise<RssSource> {
     const source = this.rssSourceRepository.create(createRssSourceDto);
     await this.rssSourceRepository.save(source);
@@ -59,6 +68,13 @@ export class RssService {
     return source;
   }
 
+  /**
+   * 更新RSS源的配置信息
+   * @param id RSS源ID
+   * @param updateRssSourceDto 更新参数
+   * @returns 更新后的RSS源实体
+   * @throws NotFoundException 当RSS源不存在时抛出异常
+   */
   async updateSource(
     id: number,
     updateRssSourceDto: UpdateRssSourceDto,
@@ -72,6 +88,11 @@ export class RssService {
     return this.rssSourceRepository.save(source);
   }
 
+  /**
+   * 删除指定的RSS源
+   * @param id RSS源ID
+   * @throws NotFoundException 当RSS源不存在时抛出异常
+   */
   async deleteSource(id: number): Promise<void> {
     const result = await this.rssSourceRepository.delete(id);
     if (result.affected === 0) {
@@ -79,6 +100,12 @@ export class RssService {
     }
   }
 
+  /**
+   * 获取指定RSS源的详细信息
+   * @param id RSS源ID
+   * @returns RSS源实体
+   * @throws NotFoundException 当RSS源不存在时抛出异常
+   */
   async getSource(id: number): Promise<RssSource> {
     const source = await this.rssSourceRepository.findOne({ where: { id } });
     if (!source) {
@@ -87,11 +114,21 @@ export class RssService {
     return source;
   }
 
+  /**
+   * 获取所有RSS源的列表
+   * @returns RSS源实体数组
+   */
   async getAllSources(): Promise<RssSource[]> {
     return this.rssSourceRepository.find();
   }
 
-  // 文章获取和处理
+  /**
+   * 文章获取和处理
+   * 从RSS源获取文章并进行处理（翻译、内容提取等）
+   * @param source RSS源实体
+   * @param forceRefresh 是否强制刷新，忽略现有进度
+   * @throws 当RSS解析或处理过程中出错时抛出异常
+   */
   async fetchArticles(source: RssSource, forceRefresh = false): Promise<void> {
     const BATCH_SIZE = 50; // 限制每批处理的文章数量
 
@@ -265,7 +302,12 @@ export class RssService {
     }
   }
 
-  // 重试失败的项目
+  /**
+   * 重试失败的项目
+   * 根据重试策略尝试重新处理之前失败的文章项目
+   * @param source RSS源实体
+   * @param progress 当前的获取进度记录
+   */
   private async retryFailedItems(source: RssSource, progress: FetchProgress): Promise<void> {
     if (!progress.failedItems || progress.failedItems.length === 0) {
       return;
@@ -369,7 +411,13 @@ export class RssService {
     await this.progressRepository.save(progress);
   }
 
-  // 添加失败的项目到进度记录
+  /**
+   * 添加失败的项目到进度记录
+   * 记录处理失败的文章信息，以便后续重试
+   * @param progress 当前的获取进度记录
+   * @param guid 文章的唯一标识符
+   * @param error 错误信息
+   */
   private addFailedItem(progress: FetchProgress, guid: string, error: string): void {
     if (!progress.failedItems) {
       progress.failedItems = [];
@@ -392,7 +440,13 @@ export class RssService {
     }
   }
 
-  // 获取完整文章内容
+  /**
+   * 获取完整文章内容
+   * 通过访问原文链接并使用选择器提取完整内容
+   * @param url 文章URL
+   * @param selector CSS选择器，用于提取内容
+   * @returns 提取的文章内容或null（如果提取失败）
+   */
   private async fetchFullContent(
     url: string,
     selector: string,
@@ -416,7 +470,16 @@ export class RssService {
     }
   }
 
-  // 文章管理
+  /**
+   * 文章管理
+   * 获取文章列表，支持分页和多种过滤条件
+   * @param sourceId 可选的RSS源ID
+   * @param page 页码，默认为1
+   * @param limit 每页数量，默认为20
+   * @param isRead 是否已读
+   * @param isFavorite 是否收藏
+   * @returns 文章列表和总数
+   */
   async getArticles(
     sourceId?: number,
     page = 1,
@@ -446,6 +509,13 @@ export class RssService {
     return query.getManyAndCount();
   }
 
+  /**
+   * 标记文章的阅读状态
+   * @param id 文章ID
+   * @param isRead 是否标记为已读
+   * @returns 更新后的文章实体
+   * @throws NotFoundException 当文章不存在时抛出异常
+   */
   async markArticleAsRead(id: number, isRead: boolean): Promise<Article> {
     const article = await this.articleRepository.findOne({ where: { id } });
     if (!article) {
@@ -456,6 +526,12 @@ export class RssService {
     return this.articleRepository.save(article);
   }
 
+  /**
+   * 切换文章的收藏状态
+   * @param id 文章ID
+   * @returns 更新后的文章实体
+   * @throws NotFoundException 当文章不存在时抛出异常
+   */
   async toggleArticleFavorite(id: number): Promise<Article> {
     const article = await this.articleRepository.findOne({ where: { id } });
     if (!article) {
@@ -466,7 +542,12 @@ export class RssService {
     return this.articleRepository.save(article);
   }
 
-  // 获取进度信息
+  /**
+   * 获取RSS源的获取进度信息
+   * @param sourceId RSS源ID
+   * @returns 获取进度记录
+   * @throws NotFoundException 当进度记录不存在时抛出异常
+   */
   async getFetchProgress(sourceId: number): Promise<FetchProgress> {
     const progress = await this.progressRepository.findOne({
       where: { sourceId },
@@ -480,7 +561,11 @@ export class RssService {
     return progress;
   }
 
-  // 重置进度并强制刷新
+  /**
+   * 重置RSS源的获取进度并强制刷新
+   * @param sourceId RSS源ID
+   * @throws NotFoundException 当RSS源不存在时抛出异常
+   */
   async resetAndRefetch(sourceId: number): Promise<void> {
     const source = await this.rssSourceRepository.findOne({ where: { id: sourceId } });
     if (!source) {
@@ -494,7 +579,13 @@ export class RssService {
     await this.fetchArticles(source, true);
   }
 
-  // 定时任务相关
+  /**
+   * 定时任务相关
+   * 更新所有活跃的RSS源
+   * - 检查每个源的更新间隔
+   * - 对需要更新的源执行获取操作
+   * - 处理更新过程中的错误
+   */
   async updateAllActiveSources(): Promise<void> {
     const sources = await this.rssSourceRepository.find({
       where: { active: true },
