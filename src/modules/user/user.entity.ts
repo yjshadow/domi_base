@@ -16,10 +16,9 @@ export class User {
     @Column({name:'avatar',type:'varchar',length:100,nullable:true})
     avatar: string; //头像地址
    
-    @Column({name:'nickname',type:'varchar',length:30})
+    @Column({name:'nickname',type:'varchar',length:30,nullable:true})
     nickname: string; //昵称 唯一
    
-// 修正拼写错误，将 'datatime' 改为 'datetime'
     @Column({name:'creat_date',type:'timestamp',default: () => 'CURRENT_TIMESTAMP'})
     creat_date: Date;
    
