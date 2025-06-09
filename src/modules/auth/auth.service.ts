@@ -4,7 +4,8 @@ import { User } from '../user/user.entity';
 import * as md5 from 'md5'; // 引入md5加密库，用于密码加密
 import { hasSubscribers } from 'diagnostics_channel';
 import { JwtService } from '@nestjs/jwt';
-import { Public } from './public.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,18 +14,13 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) {}
 
-    async register(username: string, password: string, nickname?: string) {
-        // 检查用户名是否已存在
-        const existingUser = await this.userService.findByUsername(username);
-        if (existingUser) {
-            throw new ConflictException('用户名已存在');
-        }
-
+    async register(createUserDto: CreateUserDto) {
         // 创建新用户
         const newUser = new User();
-        newUser.username = username;
-        newUser.password = md5(password);
-        newUser.nickname = nickname || username; // 如果没有提供昵称，使用用户名作为默认昵称
+        newUser.username = createUserDto.username;
+        newUser.password = md5(createUserDto.password);
+        newUser.avatar = createUserDto.avatar;
+        newUser.default_l = createUserDto.default_l;
 
         // 保存用户
         const savedUser = await this.userService.Create(newUser);
@@ -57,5 +53,36 @@ export class AuthService {
             token: await this.jwtService.signAsync(payload), // 生成token
         };
        
+    }
+
+    //用户是否存在
+    async isExist(username:string){
+        const user= await this.userService.findByUsername(username);
+        if(!user){
+            return user;
+        }
+        return user;
+    }
+    //用户修改密码
+    async changePassword(changePasswordDto:ChangePasswordDto){
+        const user= await this.userService.findByUsername(changePasswordDto.username);
+        if(!user){
+            throw new UnauthorizedException('用户不存在');
+        }
+        const hashPassword=md5(changePasswordDto.oldpassword); // 对密码进行加密
+        if(user.password!==hashPassword){ // 比较加密后的密码是否匹配
+             throw new UnauthorizedException('密码错误');
+       }
+        const hashNewPassword=md5(changePasswordDto.newpassword); // 对密码进行加密
+        user.password=hashNewPassword;
+        const savedUser=await this.userService.UpdatePassWord(user.username,user.password);
+        if(savedUser){
+            const payload = { username: user.username, sub: user.id ,role:user.role_sn,level:user.level_sn}; // 生成token的payload
+            return {
+                token: await this.jwtService.signAsync(payload), // 生成token
+            };
+        }else{
+            throw new ConflictException('修改失败');
+        }
     }
 }

@@ -13,7 +13,7 @@ export class User {
     @Column({name:'upass',type:'varchar',length:500})
     password: string;
     
-    @Column({name:'avatar',type:'varchar',length:100})
+    @Column({name:'avatar',type:'varchar',length:100,nullable:true})
     avatar: string; //头像地址
    
     @Column({name:'nickname',type:'varchar',length:30})

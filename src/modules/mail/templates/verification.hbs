@@ -1,6 +1,12 @@
-<div style="font-family: Arial, sans-serif; padding: 20px;">
-  <h2>您好！</h2>
-  <p>您的邮箱验证码为：<strong>{{code}}</strong></p>
-  <p>该验证码有效期为 {{expiresIn}} 分钟，请及时完成验证。</p>
-  <p>如非本人操作，请忽略此邮件。</p>
-</div>
+<!-- mail/templates/verification.hbs -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>邮箱验证码</title>
+</head>
+<body>
+  <p>您的验证码是：<strong>{{code}}</strong></p>
+  <p>该验证码{{expiresIn}}分钟内有效，请及时完成验证。</p>
+</body>
+</html>  

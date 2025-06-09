@@ -1,100 +1,199 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# RSS 翻译器
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+一个基于 NestJS 的 RSS 订阅服务，可以自动获取 RSS 源内容并进行翻译。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 功能特点
 
-## Description
+- 支持添加、编辑和删除 RSS 源
+- 自动定时获取 RSS 源更新
+- 支持文章内容翻译
+- RESTful API 接口
+- 统一的响应格式和错误处理
+- SQLite 数据存储
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 技术栈
 
-## Project setup
+- NestJS
+- TypeORM
+- SQLite
+- TypeScript
+
+## 安装
+
+1. 克隆项目
 
 ```bash
-$ npm install
+git clone <repository-url>
+cd rss-translator
 ```
 
-## Compile and run the project
+2. 安装依赖
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+3. 配置环境变量
+
+复制 `.env.example` 文件为 `.env` 并根据需要修改配置：
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+主要配置项说明：
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `PORT`: 应用程序运行端口（默认：3000）
+- `DATABASE_PATH`: SQLite 数据库文件路径
+- `RSS_DEFAULT_UPDATE_INTERVAL`: RSS 源默认更新间隔（分钟）
+- `RSS_MAX_ARTICLES_PER_SOURCE`: 每个源最多保存的文章数
+- `TRANSLATION_API_KEY`: 翻译服务 API 密钥
+- `TRANSLATION_API_URL`: 翻译服务 API 地址
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 运行
+
+### 开发环境
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 生产环境
 
-## Resources
+```bash
+npm run build
+npm run start:prod
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## API 接口
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### RSS 源管理
 
-## Support
+#### 添加 RSS 源
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```http
+POST /api/rss/sources
+Content-Type: application/json
 
-## Stay in touch
+{
+  "name": "示例源",
+  "url": "https://example.com/feed.xml",
+  "language": "en",
+  "target_language": "zh",
+  "update_interval": 60
+}
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+#### 获取所有 RSS 源
 
-## License
+```http
+GET /api/rss/sources
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+#### 更新 RSS 源
 
+```http
+PUT /api/rss/sources/:id
+Content-Type: application/json
 
+{
+  "name": "新名称",
+  "active": false
+}
+```
+
+#### 删除 RSS 源
+
+```http
+DELETE /api/rss/sources/:id
+```
+
+### 文章管理
+
+#### 获取文章列表
+
+```http
+GET /api/rss/articles?source_id=1&page=1&limit=10
+```
+
+#### 获取文章详情
+
+```http
+GET /api/rss/articles/:id
+```
+
+### 调度器控制
+
+#### 手动触发更新
+
+```http
+POST /api/rss/scheduler/trigger
+```
+
+#### 获取源状态统计
+
+```http
+GET /api/rss/sources/stats
+```
+
+## 响应格式
+
+### 成功响应
+
+```json
+{
+  "code": 200,
+  "data": {
+    // 响应数据
+  },
+  "message": "Success",
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+### 错误响应
+
+```json
+{
+  "code": 400,
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "错误描述"
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z"
+}
+```
+
+## 开发
+
+### 项目结构
+
+```
+src/
+├── common/                 # 通用功能
+│   ├── filters/           # 异常过滤器
+│   └── interceptors/      # 拦截器
+├── modules/               # 功能模块
+│   ├── rss/              # RSS 模块
+│   │   ├── dto/         # 数据传输对象
+│   │   ├── entities/    # 数据库实体
+│   │   └── ...
+│   └── translation/      # 翻译模块
+└── main.ts               # 应用入口
+```
+
+### 数据库迁移
+
+项目使用 TypeORM 的自动迁移功能。在开发环境中，`synchronize: true` 会自动更新数据库架构。在生产环境中，应该使用迁移文件：
+
+```bash
+# 生成迁移
+npm run typeorm:migration:generate -- -n MigrationName
+
+# 运行迁移
+npm run typeorm:migration:run
+```
+
+## 许可证
+
+MIT

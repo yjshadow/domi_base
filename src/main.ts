@@ -1,27 +1,65 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import * as compression from 'compression';
+import  helmet from 'helmet';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
+  // 创建 NestJS 应用实例
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  const logger = new Logger('Bootstrap');
   
-const app = await NestFactory.create<NestExpressApplication>(AppModule);
-const config = new DocumentBuilder()
-.setTitle('Your App Title')
-.setDescription('The API description of your app')
-.setVersion('1.0')
-.addTag('your - tag')
-.build();
-const document = SwaggerModule.createDocument(app, config);
-SwaggerModule.setup('api', app, document);
-// 配置 CORS
-app.enableCors({
-  origin: '*', // 允许所有来源（生产环境建议指定具体域名）
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // 允许的请求方法
-  credentials: true, // 允许携带 Cookie
-  allowedHeaders: '*', // 允许所有请求头
-});
-
-  await app.listen(process.env.PORT ?? 3000);
+  // 获取应用配置
+  const port = configService.get<number>('PORT', 3000);
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+  
+  // 启用 CORS
+  app.enableCors();
+  
+  // 使用 Helmet 增强安全性
+  app.use(helmet());
+  
+  // 启用 Gzip 压缩
+  app.use(compression());
+  
+  // 设置全局前缀
+  app.setGlobalPrefix('api');
+  
+  // 配置全局验证管道
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true, // 自动转换类型
+      whitelist: true, // 过滤掉未在 DTO 中声明的属性
+      forbidNonWhitelisted: true, // 如果存在未在 DTO 中声明的属性，则抛出错误
+      disableErrorMessages: nodeEnv === 'production', // 在生产环境中禁用详细错误消息
+    }),
+  );
+  
+  // 配置 Swagger 文档
+  if (nodeEnv !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('RSS 翻译器 API')
+      .setDescription('RSS 翻译器的 API 文档')
+      .setVersion('1.0')
+      .addTag('rss')
+      .addTag('user')
+      .addTag('auth')
+      .addTag('translation')
+      .addTag('system')
+      .build();
+    
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+    
+    logger.log('Swagger 文档已启用，访问路径: /api/docs');
+  }
+  
+  // 启动应用
+  await app.listen(port);
+  logger.log(`应用已启动，运行环境: ${nodeEnv}，监听端口: ${port}`);
 }
+
 bootstrap();

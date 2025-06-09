@@ -22,9 +22,7 @@ export class UserService {
     }
     async findByUsername(username: string): Promise<User> {
         const user =  await this.userRepository.findOneBy({ username });
-        if (!user) {
-            throw new Error(`未找到 ${username} 的用户`);
-        }
+        
         return user;
     }
     async GetUserInfoByJwt(username: string): Promise<User> {
@@ -36,5 +34,9 @@ export class UserService {
     }
     async Create(user: User): Promise<User> {
         return await this.userRepository.save(user);
+    }
+
+    async UpdatePassWord(username:string ,password:string){
+        return await this.userRepository.update({username}, {password});
     }
 }
