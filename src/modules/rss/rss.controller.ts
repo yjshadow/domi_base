@@ -11,11 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { RssService } from './rss.service';
-import { CreateRssSourceDto } from './dto/create-rss-source.dto';
-import { UpdateRssSourceDto } from './dto/update-rss-source.dto';
+import { CreateRssSourceDto } from '../rsshub/dto/create-rss-source.dto';
+import { UpdateRssSourceDto } from '../rsshub/dto/update-rss-source.dto';
 import { RssSource } from './entities/rss-source.entity';
 import { Article } from '../subscription/models/article.entity';
 import { FetchProgress } from './entities/fetch-progress.entity';
+import {Public} from '../auth/public.decorator';
 
 @ApiTags('RSS订阅')
 @Controller('rss')
@@ -28,9 +29,51 @@ export class RssController {
    * @param createRssSourceDto RSS源创建参数
    * @returns 创建的RSS源实体
    */
+  @Public()
   @ApiTags('sources')
   @ApiOperation({ summary: '创建RSS源', description: '创建新的RSS订阅源' })
-  @ApiBody({ type: CreateRssSourceDto, description: 'RSS源创建参数' })
+  @ApiBody({ description: 'RSS源创建参数',
+     schema: {
+      type: 'object',
+      required: ['name', 'idx_userid', 'url', 'description', 'active', 'update_interval','custom_selector'],
+      properties: {
+        name: {
+          type: 'string',
+          format: 'name',
+          description: 'rss订阅源路由',
+          example: '/asdfasdf/asdfasdf',
+        },
+        idx_userid: {
+          type: 'int',
+          description: '订阅用户',
+          example: '3',
+        },
+        url: {
+          type: 'string',},
+        description: {
+          type: 'string',
+          description: 'RSS源描述',
+          example: 'RSS源描述',
+        },
+        active: {
+          type: 'boolean',
+          description: '是否启用',
+          example: 'true',
+        },
+        update_interval: {
+          type: 'number',
+          description: '更新间隔，单位为分钟',
+          example: '10',
+        },
+        custom_selector: {
+          type: 'string',
+          description: '自定义选择器',
+          example: 'div.article',
+        },
+
+      },
+    },
+   })
   @ApiResponse({ status: 201, description: '创建成功', type: RssSource })
   @Post('sources')
   async createSource(@Body() createRssSourceDto: CreateRssSourceDto): Promise<RssSource> {
@@ -207,5 +250,16 @@ export class RssController {
   @Post('sources/update-all')
   async updateAllActiveSources(): Promise<void> {
     return this.rssService.updateAllActiveSources();
+  }
+
+  /**
+   * 立即触发所有RSS源的更新，不考虑更新间隔
+   */
+  @Public()
+  @ApiOperation({ summary: '立即更新所有源', description: '立即触发所有活跃RSS源的更新，不考虑更新间隔' })
+  @ApiResponse({ status: 200, description: '更新触发成功' })
+  @Post('sources/trigger-update')
+  async triggerUpdate(): Promise<void> {
+    return this.rssService.triggerUpdate();
   }
 }

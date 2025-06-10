@@ -14,6 +14,7 @@ import { UserModule } from './modules/user/user.module';
 import { MailModule } from './modules/mail/mail.module';
 import { RssModule } from './modules/rss/rss.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { RsshubModule } from './modules/rsshub/rsshub.module';
 
 @Module({
   imports: [
@@ -22,8 +23,6 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
     AuthModule,
     UserModule,
     MailModule,
-    RssModule,
-    SubscriptionModule,
     // 配置模块
     ConfigModule.forRoot({
       isGlobal: true, // 使配置全局可用
@@ -59,6 +58,8 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
         password: configService.get('DATABASE_PASSWORD', 'root'),
         database: configService.get('DATABASE_NAME', 'domibase'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        charset: 'utf8mb4',
+        collation: 'utf8mb4_unicode_ci',
         synchronize: false, // 暂时关闭自动迁移
         logging: configService.get('NODE_ENV', 'development') === 'development',
         
@@ -69,6 +70,11 @@ import { SubscriptionModule } from './modules/subscription/subscription.module';
 
     // 定时任务模块
     ScheduleModule.forRoot(),
+    
+
+    
+
+    RsshubModule,
 
     
   ],

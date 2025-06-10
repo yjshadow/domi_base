@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsUrl, IsString, IsOptional, IsBoolean, IsInt, Min, Max, isNotEmpty, isString } from 'class-validator';
+import { IsNumber,IsNotEmpty, IsUrl, IsString, IsOptional, IsBoolean, IsInt, Min, Max, isNotEmpty, isString, isNumber } from 'class-validator';
+import { Column } from 'typeorm';
 
 export class CreateRssSourceDto {
   @IsNotEmpty()
@@ -6,8 +7,8 @@ export class CreateRssSourceDto {
   name: string;
 
   @IsNotEmpty()
-  @IsString()
-  username: string;
+  @IsNumber()
+  idx_userid: number;
 
   @IsNotEmpty()
   @IsUrl()

@@ -4,7 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { RssController } from './rss.controller';
 import { RssService } from './rss.service';
 import { RssSchedulerService } from './rss-scheduler.service';
-import { ArticlePurifierService } from './services/article-purifier.service';
+import { ArticlePurifierService } from '../rsshub/services/article-purifier.service';
 import { RssSource } from './entities/rss-source.entity';
 import { Article } from '../subscription/models/article.entity';
 import { FetchProgress } from './entities/fetch-progress.entity';

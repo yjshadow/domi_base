@@ -1,14 +1,14 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager, Connection } from 'typeorm';
 import { RssSource } from './entities/rss-source.entity';
 import { FetchProgress } from './entities/fetch-progress.entity';
 import { Article } from '../subscription/models/article.entity';
-import { CreateRssSourceDto } from './dto/create-rss-source.dto';
-import { UpdateRssSourceDto } from './dto/update-rss-source.dto';
+import { CreateRssSourceDto } from '../rsshub/dto/create-rss-source.dto';
+import { UpdateRssSourceDto } from '../rsshub/dto/update-rss-source.dto';
 import { BaseTranslationService } from '../translation/translation.service';
-import { ArticlePurifierService } from './services/article-purifier.service';
-import { PurifyOptionsDto } from './dto/purify-options.dto';
+import { ArticlePurifierService } from '../rsshub/services/article-purifier.service';
+import { PurifyOptionsDto } from '../rsshub/dto/purify-options.dto';
 import * as Parser from 'rss-parser';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -40,6 +40,7 @@ export class RssService {
     private articleRepository: Repository<Article>,
     @InjectRepository(FetchProgress)
     private progressRepository: Repository<FetchProgress>,
+    @Inject('TranslationService')
     private translationService: BaseTranslationService,
     private articlePurifierService: ArticlePurifierService,
     private connection: Connection,
@@ -64,7 +65,7 @@ export class RssService {
     const source = this.rssSourceRepository.create(createRssSourceDto);
     await this.rssSourceRepository.save(source);
     // 创建后立即获取文章
-    await this.fetchArticles(source);
+    //await this.fetchArticles(source);
     return source;
   }
 
@@ -218,28 +219,28 @@ export class RssService {
               }
 
               // 翻译文章（在事务中处理）
-              try {
-                const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
-                  this.translationService.translate(article.title, 'auto', 'zh'),
-                  article.content ? this.translationService.translate(article.content, 'auto', 'zh') : Promise.resolve(null),
-                  article.translatedDescription ? this.translationService.translate(article.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
-                ]);
+              // try {
+              //   const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
+              //     this.translationService.translate(article.title, 'auto', 'zh'),
+              //     article.content ? this.translationService.translate(article.content, 'auto', 'zh') : Promise.resolve(null),
+              //     article.translatedDescription ? this.translationService.translate(article.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
+              //   ]);
 
-                article.translatedTitle = translatedTitle;
-                if (translatedContent) article.translatedContent = translatedContent;
-                if (translatedDesc) article.translatedDescription = translatedDesc;
-              } catch (error) {
-                this.logger.error(
-                  `Error translating article ${article.title}: ${error.message}`,
-                );
+              //   article.translatedTitle = translatedTitle;
+              //   if (translatedContent) article.translatedContent = translatedContent;
+              //   if (translatedDesc) article.translatedDescription = translatedDesc;
+              // } catch (error) {
+              //   this.logger.error(
+              //     `Error translating article ${article.title}: ${error.message}`,
+              //   );
                 
-                // 记录失败的项目，以便稍后重试
-                this.addFailedItem(progress, itemGuid, error.message);
-                await this.progressRepository.save(progress);
+              //   // 记录失败的项目，以便稍后重试
+              //   this.addFailedItem(progress, itemGuid, error.message);
+              //   await this.progressRepository.save(progress);
                 
-                // 继续处理下一个项目，而不是抛出错误
-                continue;
-              }
+              //   // 继续处理下一个项目，而不是抛出错误
+              //   continue;
+              // }
 
               await entityManager.save(Article, article);
             }
@@ -375,16 +376,16 @@ export class RssService {
             }
 
             // 翻译文章
-            const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
-              this.translationService.translate(article.title, 'auto', 'zh'),
-              article.content ? this.translationService.translate(article.content, 'auto', 'zh') : Promise.resolve(null),
-              article.translatedDescription ? this.translationService.translate(article.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
-            ]);
+            // const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
+            //   this.translationService.translate(article.title, 'auto', 'zh'),
+            //   article.content ? this.translationService.translate(article.content, 'auto', 'zh') : Promise.resolve(null),
+            //   article.translatedDescription ? this.translationService.translate(article.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
+            // ]);
 
-            article.translatedTitle = translatedTitle;
-            if (translatedContent) article.translatedContent = translatedContent;
-            if (translatedDesc) article.translatedDescription = translatedDesc;
-
+            // article.translatedTitle = translatedTitle;
+            // if (translatedContent) article.translatedContent = translatedContent;
+            // if (translatedDesc) article.translatedDescription = translatedDesc;
+            console.log(article);
             await entityManager.save(Article, article);
             
             // 从失败列表中移除
@@ -577,6 +578,25 @@ export class RssService {
     
     // 强制刷新
     await this.fetchArticles(source, true);
+  }
+
+  /**
+   * 手动触发所有RSS源的更新
+   * 不考虑更新间隔，立即更新所有活跃源
+   */
+  async triggerUpdate(): Promise<void> {
+    const sources = await this.rssSourceRepository.find({
+      where: { active: true },
+    });
+    for (const source of sources) {
+      try {
+        await this.fetchArticles(source, true);
+      } catch (error) {
+        this.logger.error(
+          `Error updating source ${source.name}: ${error.message}`,
+        );
+      }
+    }
   }
 
   /**

@@ -1,6 +1,8 @@
 import { Module, DynamicModule, Provider, Optional } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { GoogleTranslationService } from './google-translation.service';
+import { basename } from 'path';
+import { BaseTranslationService } from './translation.service';
 
 @Module({
   imports: [ConfigModule],
