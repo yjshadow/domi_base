@@ -60,7 +60,7 @@ export class ArticlePurifierService {
   /**
    * 清理文本内容
    */
-  private cleanText(text: string): string {
+  public cleanText(text: string): string {
     return text
       .replace(/\s+/g, ' ')
       .trim();
@@ -69,8 +69,8 @@ export class ArticlePurifierService {
   /**
    * 清理HTML内容
    */
-  private cleanHtml(html: string): string {
-    return html
+  async cleanHtml(html: string): Promise<string> {
+    return await html
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
       .replace(/\s+/g, ' ')
@@ -80,7 +80,7 @@ export class ArticlePurifierService {
   /**
    * 解析日期字符串
    */
-  private parseDate(dateString: string): Date | null {
+  public parseDate(dateString: string): Date | null {
     if (!dateString) return null;
     try {
       return new Date(dateString);

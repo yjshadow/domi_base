@@ -4,6 +4,7 @@ import { RsshubService } from './rsshub.service';
 import { CreateRssSourceDto } from './dto/create-rss-source.dto';
 import { Public } from '../auth/public.decorator';
 import { RssSource } from './entities/rss-source.entity';
+import { runInThisContext } from 'vm';
 
 @Controller('rsshub')
 export class RsshubController {
@@ -63,5 +64,19 @@ export class RsshubController {
       @Post('sources')
       async createSource(@Body() createRssSourceDto: CreateRssSourceDto): Promise<RssSource> {
         return this.rsshubService.createSource(createRssSourceDto);
+      }
+
+      @ApiTags('sources')
+      @Public()
+      @Get('getsources')
+      async getSources(): Promise<any> {
+        const source = await this.rsshubService.getSourceById(2);
+        return this.rsshubService.fetchArticles(source);
+      }
+
+      @Public()
+      @Get('getsource/:id')
+      async getSource(@Param('id') id: number): Promise<any> {
+        const sources =await this.rsshubService.getSourceById(2);
       }
 }

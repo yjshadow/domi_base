@@ -6,10 +6,11 @@ import { ArticlePurifierService } from '../rsshub/services/article-purifier.serv
 import { RssArticle } from "./entities/rss-article.entity";
 import { RssSource } from "./entities/rss-source.entity";
 import {RsshubController} from "./rsshub.controller";
+import { FetchProgress } from './entities/fetch-progress.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RssSource,RssArticle]),
+    TypeOrmModule.forFeature([RssSource,RssArticle,FetchProgress]),
   ],
   controllers: [RsshubController],
   providers: [RsshubService,ArticlePurifierService],
