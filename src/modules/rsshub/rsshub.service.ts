@@ -108,31 +108,23 @@ export class RsshubService {
            await this.connection.transaction(async (entityManager) => {
              for (let i = 0; i < items.length; i++) {
               
-                    console.log(i+'>>>>>1111111111111111111111111>>>>>>');
-                  
                const item = items[i];
                const itemGuid = item.guid || item.link;
                
-               // 如果有上次处理的项目，跳过直到找到该项目
-               if (progress.lastProcessedItem && progress.processedCount > 0) {
-                 if (progress.lastProcessedItem.guid === itemGuid) {
-                   // 找到上次处理的项目，从下一个开始
-                   progress.lastProcessedItem = null;
-                   continue;
-                 }
-                 
-                 if (progress.lastProcessedItem) {
-                   // 还没找到上次处理的项目，继续跳过
-                   continue;
-                 }
-               }
-               console.log(i+'>>>>>2222222222222222222222222222222222222>>>>>>');
+                // 如果有上次处理的项目，跳过直到找到该项目
+          if (progress.lastProcessedItem && progress.processedCount > 0) {
+            if (progress.lastProcessedItem.guid === itemGuid) {
+              // 找到上次处理的项目，从下一个开始
+              progress.lastProcessedItem = null;
+              continue;
+            }
+          }
+
                try {
                  // 检查文章是否已存在
                  const existingArticle = await entityManager.findOne(RssArticle, {
                    where: { guid: itemGuid },
                  });
-                 console.log(i+'>>>>>33333333333333333333333333333333333333333>>>>>>');
                  if (!existingArticle) {
                    const rssArticle = new RssArticle();
                    rssArticle.source_id = source.id;
@@ -145,34 +137,7 @@ export class RsshubService {
                    rssArticle.pub_date = new Date(item.pubDate || item.isoDate);
                    rssArticle.categories = item.categories;
                    
-                   // 如果配置了自定义选择器，使用它来提取内容
                   
-     
-                   // 翻译文章（在事务中处理）
-                   // try {
-                   //   const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
-                   //     this.translationService.translate(rssArticle.title, 'auto', 'zh'),
-                   //     rssArticle.content ? this.translationService.translate(rssArticle.content, 'auto', 'zh') : Promise.resolve(null),
-                   //     rssArticle.translatedDescription ? this.translationService.translate(rssArticle.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
-                   //   ]);
-     
-                   //   rssArticle.translatedTitle = translatedTitle;
-                   //   if (translatedContent) rssArticle.translatedContent = translatedContent;
-                   //   if (translatedDesc) rssArticle.translatedDescription = translatedDesc;
-                   // } catch (error) {
-                   //   this.logger.error(
-                   //     `Error translating rssArticle ${rssArticle.title}: ${error.message}`,
-                   //   );
-                     
-                   //   // 记录失败的项目，以便稍后重试
-                   //   this.addFailedItem(progress, itemGuid, error.message);
-                   //   await this.progressRepository.save(progress);
-                     
-                   //   // 继续处理下一个项目，而不是抛出错误
-                   //   continue;
-                   // }
-                  
-                  console.log(i+'>>>>>44444444444444444444444444444444444444>>>>>>');
                   
                    await entityManager.save(RssArticle, rssArticle);
                    console.log(items.length);

@@ -5,21 +5,16 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
 import { RedisClientOptions } from 'redis';
 import { redisStore } from 'cache-manager-redis-yet';
-import { TranslationModule } from './modules/translation/translation.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { MailModule } from './modules/mail/mail.module';
-import { RssModule } from './modules/rss/rss.module';
-import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { RsshubModule } from './modules/rsshub/rsshub.module';
 
 @Module({
   imports: [
-    // 翻译模块
-    TranslationModule,
     AuthModule,
     UserModule,
     MailModule,

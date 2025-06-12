@@ -70,7 +70,7 @@ export class RsshubController {
       @Public()
       @Get('getsources')
       async getSources(): Promise<any> {
-        const source = await this.rsshubService.getSourceById(2);
+        const source = await this.rsshubService.getSourceById(3);
         return this.rsshubService.fetchArticles(source);
       }
 

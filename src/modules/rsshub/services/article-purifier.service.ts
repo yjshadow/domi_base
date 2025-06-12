@@ -69,11 +69,12 @@ export class ArticlePurifierService {
   /**
    * 清理HTML内容
    */
-  async cleanHtml(html: string): Promise<string> {
-    return await html
+   cleanHtml(html: string): string {
+    return  html
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
       .replace(/\s+/g, ' ')
+      .replace(/<[^>]*>/g, '')
       .trim();
   }
 
