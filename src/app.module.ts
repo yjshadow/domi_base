@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { MailModule } from './modules/mail/mail.module';
 import { RsshubModule } from './modules/rsshub/rsshub.module';
+import { ArticleTranslatorModule } from './modules/article-translator/article-translator.module';
 
 @Module({
   imports: [
@@ -71,6 +72,8 @@ import { RsshubModule } from './modules/rsshub/rsshub.module';
 
     RsshubModule,
 
+    // 文章翻译模块
+    ArticleTranslatorModule,
     
   ],
   controllers: [AppController],
