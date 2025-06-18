@@ -10,7 +10,7 @@ import {
   OneToOne
 } from 'typeorm';
 import { RssSource } from './rss-source.entity';
-import { TranslatedArticle } from '../../article-translator/entities/translated-article.entity';
+
 
 /**
  * RSS文章实体类
@@ -135,9 +135,4 @@ export class RssArticle {
   @JoinColumn({ name: 'source_id' })
   source: RssSource;
 
-  // 与翻译文章的一对一关系
-  @OneToOne(() => TranslatedArticle, (translatedArticle) => translatedArticle.article, {
-    cascade: true
-  })
-  translatedArticle: TranslatedArticle;
 }

@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
+import { BullModule } from '@nestjs/bull';
 import { RedisClientOptions } from 'redis';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
@@ -12,7 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { MailModule } from './modules/mail/mail.module';
 import { RsshubModule } from './modules/rsshub/rsshub.module';
-import { ArticleTranslatorModule } from './modules/article-translator/article-translator.module';
+import { ArticleTranslatorModule } from   './modules/article-translator/article-translator.module';
 
 @Module({
   imports: [
@@ -67,8 +68,24 @@ import { ArticleTranslatorModule } from './modules/article-translator/article-tr
     // 定时任务模块
     ScheduleModule.forRoot(),
     
-
-    
+    // Bull队列模块
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get('REDIS_PORT', 6379),
+          password: configService.get('REDIS_PASSWORD', ''),
+          db: configService.get('REDIS_DB', 0),
+        },
+        defaultJobOptions: {
+          attempts: 3, // 默认重试次数
+          removeOnComplete: true, // 完成后删除任务
+          removeOnFail: false, // 失败后保留任务记录
+        },
+      }),
+      inject: [ConfigService],
+    }),
 
     RsshubModule,
 
