@@ -8,6 +8,8 @@ import { FetchProgress } from   './entities/fetch-progress.entity';
 import { CreateRssSourceDto } from '../rsshub/dto/create-rss-source.dto';
 import { ArticlePurifierService } from  './services/article-purifier.service';
 import { PurifyOptionsDto } from '../rsshub/dto/purify-options.dto';
+import { TranslatorService } from '../article-translator/services/translator.service';
+import { TranslateOptionsDto } from '../article-translator/dto/translate-options.dto';
 import * as Parser from 'rss-parser';
 import axios from 'axios';
 
@@ -34,6 +36,7 @@ export class RsshubService {
     @InjectRepository(RssArticle)
     private readonly articleRepository: Repository<RssArticle>,
     private readonly articlePurifierService: ArticlePurifierService,
+    private readonly translatorService: TranslatorService,
     @InjectRepository(FetchProgress)
     private progressRepository: Repository<FetchProgress>,
     private connection: Connection, 
@@ -75,7 +78,7 @@ export class RsshubService {
         */
        async fetchArticles(source: RssSource, forceRefresh = false): Promise<any> {
          const BATCH_SIZE = 50; // 限制每批处理的文章数量
-     
+         console.log('start-----------------------------'+performance.now().toString());
          try {
            // 获取或创建进度记录
            let progress = await this.progressRepository.findOne({
@@ -129,7 +132,6 @@ export class RsshubService {
                    const rssArticle = new RssArticle();
                    rssArticle.source_id = source.id;
                    rssArticle.title = await this.articlePurifierService.cleanHtml(item.title);
-                   rssArticle.description = await this.articlePurifierService.cleanHtml(item.description);
                    rssArticle.content = await this.articlePurifierService.cleanHtml(item.contentEncoded || item.content);
                    rssArticle.link = item.link;
                    rssArticle.guid = itemGuid;
@@ -137,8 +139,36 @@ export class RsshubService {
                    rssArticle.pub_date = new Date(item.pubDate || item.isoDate);
                    rssArticle.categories = item.categories;
                    
-                  
-                  
+                   // 翻译文章标题和内容
+                   const translateOptions = new TranslateOptionsDto();
+                   translateOptions.targetLanguages = ['en', 'ja', 'ko']; // 设置目标语言
+                   translateOptions.purifyBeforeTranslation = true;
+                   translateOptions.useCache = true;
+                   translateOptions.async=true;
+
+                   try {
+                     const translationResult = await this.translatorService.translateText(
+                       rssArticle.title,
+                       rssArticle.content,
+                       translateOptions
+                     );
+
+                      rssArticle.title= translationResult.original.title;
+                   rssArticle.content = translationResult.original.content;
+
+                     // 保存翻译结果
+                     rssArticle.translated_content = {
+                       title: translationResult.title,
+                       content: translationResult.content
+                     };
+                   } catch (translationError) {
+                     this.logger.error(
+                       `Translation failed for article ${rssArticle.guid}: ${translationError.message}`,
+                       translationError.stack
+                     );
+                     // 即使翻译失败，我们仍然保存原始文章
+                   }
+                   
                    await entityManager.save(RssArticle, rssArticle);
                    console.log(items.length);
                    console.log(i);
@@ -200,6 +230,7 @@ export class RsshubService {
            
            throw error;
          }
+         console.log('end-----------------------------'+performance.now().toString());
        }
      
        /**
@@ -257,20 +288,35 @@ export class RsshubService {
                  rssArticle.pub_date = new Date(feedItem.pubDate || feedItem.isoDate);
                  rssArticle.categories = feedItem.categories;
                 
-                 // 如果配置了自定义选择器，使用它来提取内容
-                
-     
-                 // 翻译文章
-                 // const [translatedTitle, translatedContent, translatedDesc] = await Promise.all([
-                 //   this.translationService.translate(rssArticle.title, 'auto', 'zh'),
-                 //   rssArticle.content ? this.translationService.translate(rssArticle.content, 'auto', 'zh') : Promise.resolve(null),
-                 //   rssArticle.translatedDescription ? this.translationService.translate(rssArticle.translatedDescription, 'auto', 'zh') : Promise.resolve(null)
-                 // ]);
-     
-                 // rssArticle.translatedTitle = translatedTitle;
-                 // if (translatedContent) rssArticle.translatedContent = translatedContent;
-                 // if (translatedDesc) rssArticle.translatedDescription = translatedDesc;
-                 console.log(rssArticle);
+                 // 翻译文章标题和内容
+                 const translateOptions = new TranslateOptionsDto();
+                 translateOptions.targetLanguages = ['en', 'ja', 'ko']; // 设置目标语言
+                 translateOptions.purifyBeforeTranslation = true;
+                 translateOptions.useCache = true;
+                 translateOptions.async=true;
+
+                 try {
+                   const translationResult = await this.translatorService.translateText(
+                     rssArticle.title,
+                     rssArticle.content,
+                     translateOptions
+                   );
+                   rssArticle.title= translationResult.original.title;
+                   rssArticle.content = translationResult.original.content;
+                   
+                   // 保存翻译结果
+                   rssArticle.translated_content = {
+                      title:translationResult.title,
+                      content:translationResult.content,
+                   };
+                 } catch (translationError) {
+                   this.logger.error(
+                     `Translation failed for article ${rssArticle.guid}: ${translationError.message}`,
+                     translationError.stack
+                   );
+                   // 即使翻译失败，我们仍然保存原始文章
+                 }
+                 
                  await entityManager.save(RssArticle, rssArticle);
                  
                  // 从失败列表中移除

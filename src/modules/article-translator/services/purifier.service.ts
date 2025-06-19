@@ -111,7 +111,7 @@ export class PurifierService {
               content: content
             }
           ],
-          max_tokens: Math.min(maxOutputLength * 2, 200),
+          max_tokens: Math.min(maxOutputLength * 2, 800),
           temperature: 0.2
         },
         {

@@ -86,11 +86,11 @@ import { ArticleTranslatorModule } from   './modules/article-translator/article-
       }),
       inject: [ConfigService],
     }),
-
+    ArticleTranslatorModule,
     RsshubModule,
 
     // 文章翻译模块
-    ArticleTranslatorModule,
+    
     
   ],
   controllers: [AppController],

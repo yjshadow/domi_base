@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
-import { truncate } from 'fs/promises';
 
 export class TranslateOptionsDto {
   @ApiProperty({
@@ -35,9 +34,9 @@ export class TranslateOptionsDto {
   @ApiProperty({
     description: '是否异步处理翻译（不阻塞请求）',
     required: false,
-    default: truncate,
+    default: false,
   })
   @IsBoolean()
   @IsOptional()
-  async?: boolean = true;
+  async?: boolean = false;
 }

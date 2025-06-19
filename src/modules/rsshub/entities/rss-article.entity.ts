@@ -118,10 +118,10 @@ export class RssArticle {
   translated_title: string;
 
   @Column({
-    type: 'longtext',
+    type: 'simple-json',
     nullable: true
   })
-  translated_content: string;
+  translated_content: {[key:string]:any};
 
   @Column({
     type: 'text',

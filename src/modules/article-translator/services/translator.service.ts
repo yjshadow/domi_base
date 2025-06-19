@@ -9,15 +9,26 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { TranslationTask } from '../dto/translation-result.dto';
 
-interface TranslationResult {
-  [key: string]: string;
+interface ArticleTranslationResult {
+  original: {
+    title: string;
+    content: string;
+  };
+  title: {
+    [lang: string]: string;
+  };
+  content: {
+    [lang: string]: string;
+  };
 }
 
 interface CachedTranslation {
   key: string;
   originalText: string;
   targetLanguages: string[];
-  translations: TranslationResult;
+  translations: {
+    [key: string]: string;
+  };
   createdAt: Date;
 }
 
@@ -39,72 +50,42 @@ export class TranslatorService {
   }
 
   /**
-   * 将文本翻译成多种目标语言
-   * @param text 要翻译的文本
+   * 将文章的标题和内容翻译成多种目标语言
+   * @param title 要翻译的标题
+   * @param content 要翻译的内容
    * @param options 翻译选项
-   * @returns 包含各语言翻译结果的对象
+   * @returns 包含原始文本和各语言翻译结果的对象
    */
-  async translateText(text: string, options: TranslateOptionsDto): Promise<TranslationResult> {
+  async translateText(title: string, content: string, options: TranslateOptionsDto): Promise<ArticleTranslationResult> {
     try {
-      const cacheKey = this.generateCacheKey(text, options.targetLanguages);
-      
-      // 如果启用缓存且缓存中存在结果，则直接返回缓存的结果
-      if (options.useCache) {
-        const cachedData = await this.cacheManager.get<CachedTranslation>(cacheKey);
-        if (cachedData) {
-          this.logger.debug('Using cached translation result');
-          return cachedData.translations;
-        }
-      }
+      const titleResults: { [lang: string]: string } = {};
+      const contentResults: { [lang: string]: string } = {};
 
-      // 如果是异步处理，则将翻译任务加入队列
-      if (options.async) {
-        this.queueTranslation(text, options);
-        return { status: 'queued', message: 'Translation task has been queued' } as any;
-      }
-
-      const results: TranslationResult = {};
-      
       // 并行处理所有语言的翻译
       await Promise.all(
         options.targetLanguages.map(async (targetLang) => {
           try {
-            results[targetLang] = await this.translateToLanguage(text, targetLang);
+            titleResults[targetLang] = await this.translateToLanguage(title, targetLang);
+            contentResults[targetLang] = await this.translateToLanguage(content, targetLang);
           } catch (error) {
             this.logger.error(`Failed to translate to ${targetLang}: ${error.message}`);
-            results[targetLang] = text; // 降级方案：使用原文
+            // 降级方案：使用原文
+            titleResults[targetLang] = title;
+            contentResults[targetLang] = content;
           }
         })
       );
 
-      // 缓存翻译结果
-      if (options.useCache) {
-        const cachedTranslation: CachedTranslation = {
-          key: cacheKey,
-          originalText: text,
-          targetLanguages: options.targetLanguages,
-          translations: results,
-          createdAt: new Date(),
-        };
-        
-        this.logger.debug(`Caching translation with key: ${cacheKey}`);
-        await this.cacheManager.set(cacheKey, cachedTranslation, this.CACHE_TTL);
-        
-        // 将缓存键添加到缓存键集合中
-        const cacheKeys = await this.getCacheKeys();
-        this.logger.debug(`Current cache keys: ${JSON.stringify(cacheKeys)}`);
-        
-        if (!cacheKeys.includes(cacheKey)) {
-          cacheKeys.push(cacheKey);
-          this.logger.debug(`Adding new cache key: ${cacheKey}`);
-          await this.cacheManager.set(this.CACHE_KEY_SET, cacheKeys, 0); // 永不过期
-          this.logger.debug(`Updated cache keys: ${JSON.stringify(await this.getCacheKeys())}`);
-        }
-      }
-
-      return results;
+      return {
+        original: {
+          title,
+          content
+        },
+        title: titleResults,
+        content: contentResults
+      };
     } catch (error) {
-      this.logger.error(`Translation failed: ${error.message}`, error.stack);
+      this.logger.error(`Article translation failed: ${error.message}`, error.stack);
       throw error;
     }
   }
@@ -159,32 +140,6 @@ export class TranslatorService {
   }
 
   /**
-   * 生成缓存键
-   * @param text 原文
-   * @param targetLanguages 目标语言列表
-   * @returns 缓存键
-   */
-  private generateCacheKey(text: string, targetLanguages: string[]): string {
-    // 确保目标语言是排序的，以保持一致性
-    const sortedLanguages = [...targetLanguages].sort();
-    
-    // 创建一个包含所有相关信息的字符串
-    const dataToHash = `${text.trim()}|${sortedLanguages.join(',')}`;
-    
-    this.logger.debug(`Generating cache key for text: "${text.substring(0, 50)}..." with languages: ${sortedLanguages.join(',')}`);
-    
-    const hash = require('crypto')
-      .createHash('md5')
-      .update(dataToHash)
-      .digest('hex');
-    
-    const cacheKey = `translation:${hash}`;
-    this.logger.debug(`Generated cache key: ${cacheKey}`);
-    
-    return cacheKey;
-  }
-
-  /**
    * 获取语言的完整名称
    * @param langCode 语言代码
    * @returns 语言名称
@@ -205,18 +160,6 @@ export class TranslatorService {
     return languageNames[langCode] || langCode;
   }
 
-  /**
-   * 将翻译任务加入异步队列
-   * @param text 要翻译的文本
-   * @param options 翻译选项
-   * @returns Promise<void>
-   * 
-   * 该方法使用 Bull 队列来处理异步翻译任务：
-   * 1. 创建一个包含必要信息的任务数据对象
-   * 2. 将任务添加到队列中，设置任务选项
-   * 3. 记录任务添加的状态
-   * 4. 如果出现错误，记录错误并重新抛出
-   */
   /**
    * 创建新的翻译任务
    * @param text 要翻译的文本
@@ -444,27 +387,6 @@ export class TranslatorService {
     } catch (error) {
       this.logger.error(`Failed to clear translation cache: ${error.message}`, error.stack);
       return false;
-    }
-  }
-
-  /**
-   * 将翻译任务加入异步队列
-   * @param text 要翻译的文本
-   * @param options 翻译选项
-   * @returns Promise<void>
-   */
-  private async queueTranslation(text: string, options: TranslateOptionsDto): Promise<void> {
-    try {
-      const tasks = await Promise.all(
-        options.targetLanguages.map(targetLang =>
-          this.createTranslationTask(text, targetLang)
-        )
-      );
-      
-      this.logger.log(`Created ${tasks.length} translation tasks`);
-    } catch (error) {
-      this.logger.error(`Failed to queue translation tasks: ${error.message}`, error.stack);
-      throw error;
     }
   }
 }

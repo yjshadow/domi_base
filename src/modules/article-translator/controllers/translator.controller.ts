@@ -107,16 +107,13 @@ export class TranslatorController {
     }
     
     // 翻译标题和内容
-    const [translatedTitles, translatedContents] = await Promise.all([
-      this.translatorService.translateText(titleToTranslate, options),
-      this.translatorService.translateText(contentToTranslate, options),
-    ]);
+    const result = await this.translatorService.translateText(titleToTranslate, contentToTranslate, options);
     
     return {
-      originalTitle: dto.title,
-      originalContent: dto.content,
-      title: translatedTitles,
-      content: translatedContents,
+      originalTitle: result.original.title,
+      originalContent: result.original.content,
+      title: result.title,
+      content: result.content,
     };
   }
 
